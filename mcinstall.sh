@@ -1,132 +1,186 @@
 #!/bin/bash
+## install dependency
 
-temp_path=$(dirname "$0")
-cd $temp_path
-real_path=$(pwd)
-echo  "本脚本文件所在目录路径是: $real_path "
-cd $real_path
+if [ ! -f "epel-release-latest-6.noarch.rpm" ]
+  then
+  wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
+fi
 
-yum -y install unzip bzip2-devel libtool libevent-devel libcap-devel openssl-devel
-yum -y install bison flex snappy-devel numactl-devel cyrus-sasl-devel
+rpm -Uvh epel-release-latest-6.noarch.rpm
 
-mkdir -p /data/source/mcrouter/src
+yum install -y bzip2-devel  libevent-devel libcap-devel scons rpm-build
+yum install -y jemalloc-devel gmp-devel mpfr-devel libmpc-devel m4 wget
+yum install -y python-devel bzip2-devel 
+yum install -y m4 cmake libicu-devel chrpath openmpi-devel
+yum install -y mpich-devel openssl-devel
+yum install -y glibc-devel.i686 glibc-devel.x86_64 gcc gcc-c++ zlib-devel
+yum install -y gmp-devel mpfr-devel libmpc-devel
+yum install -y gflags-devel
 
-#GCC4.9 folly用到了诸如 chrono 之类的C++11库，必须使用GCC 4.8以上版本，才能够完整支持这些用到的C++11特性和标准库。
-cd /data/source/mcrouter/src
-wget https://gmplib.org/download/gmp/gmp-5.1.3.tar.bz2
-tar jxf gmp-5.1.3.tar.bz2 && cd gmp-5.1.3/
-./configure && make && make install
+#gflags-1.3-7.el6.x86_64
+#gmp-4.3.1-7.el6_2.2.x86_64
+#libmpc-0.8-3.el6.x86_64
+#mpfr-2.4.1-6.el6.x86_64
 
-cd /data/source/mcrouter/src
-wget http://www.mpfr.org/mpfr-current/mpfr-3.1.2.tar.bz2
-tar jxf mpfr-3.1.3.tar.bz2 ;cd mpfr-3.1.3/
-./configure && make && make install
+cd /usr/local/src
 
-cd /data/source/mcrouter/src
-wget http://www.multiprecision.org/mpc/download/mpc-1.0.1.tar.gz
-tar xzf mpc-1.0.1.tar.gz ;cd mpc-1.0.1
-./configure && make && make install
+if [ ! -f "/usr/local/lib/libglog.so" ] ; then
+  #glog-0.3.3 rpmbuild
+  if [ ! -f "glog-0.3.3.tar.gz" ]
+    then
+    wget https://google-glog.googlecode.com/files/glog-0.3.3.tar.gz
+  fi
+
+  #rpmbuild -tb -D'NAME glog' -D'VERSION 0.3.3' glog-0.3.3.tar.gz
+  tar zxvf glog-0.3.3.tar.gz
+  cd glog-0.3.3
+  ./configure && make && make install
+  if [ $? -eq 0 ] ; then  echo "glog build success"; else echo "glog build error" ; exit; fi
+fi
+#yum install -y ~/rpmbuild/RPMS/x86_64/glog-0.3.3-1.x86_64.rpm  ~/rpmbuild/RPMS/x86_64/glog-devel-0.3.3-1.x86_64.rpm
 
 
-export LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:/usr/lib:/usr/lib64:$LD_LIBRARY_PATH
-cd /data/source/mcrouter/src
-wget http://ftp.gnu.org/gnu/gcc/gcc-4.9.1/gcc-4.9.1.tar.bz2
-tar jxf gcc-4.9.1.tar.bz2 ;cd gcc-4.9.1
+cd /usr/local/src
+if [ ! -f "libtool-2.4.4.tar.gz" ]
+  then
+  wget http://ftpmirror.gnu.org/libtool/libtool-2.4.4.tar.gz
+fi
+
+if [ ! -f "autoconf-2.69.tar.gz" ]
+  then
+  wget http://ftpmirror.gnu.org/autoconf/autoconf-2.69.tar.gz
+fi
+
+if [ ! -f "automake-1.13.tar.gz" ]
+  then
+  wget http://ftpmirror.gnu.org/automake/automake-1.13.tar.gz
+fi
+
+if [ ! -f "ragel-6.9.tar.gz" ]
+  then
+  wget http://www.colm.net/files/ragel/ragel-6.9.tar.gz
+fi
+
+export PATH=/opt/autotools/bin:$PATH
+
+/usr/local/bin/ragel --version | grep 6.9
+if [ $? -ne 0 ] ; then
+    tar xvzf ragel-6.9.tar.gz && cd ragel-6.9
+    ./configure && make && make install
+    if [ $? -eq 0 ] ; then  echo "build ragel success"; else echo $? ; exit; fi
+fi
+cd /usr/local/src
+
+/opt/autotools/bin/autoconf --version| grep 2.69
+if [ $? -ne 0 ] ; then
+  tar xvzf autoconf-2.69.tar.gz && cd autoconf-2.69
+  ./configure --prefix=/opt/autotools && make && sudo make install
+  if [ $? -eq 0 ] ; then  echo "autoconf build success"; else echo $? ; exit; fi
+fi
+
+cd /usr/local/src
+/opt/autotools/bin/automake --version| grep 1.13
+if [ $? -ne 0 ] ; then
+  tar xvzf automake-1.13.tar.gz && cd automake-1.13
+  ./configure --prefix=/opt/autotools && make && sudo make install
+  if [ $? -eq 0 ] ; then  echo "automake build success"; else echo $? ; exit; fi
+fi
+
+cd /usr/local/src
+/opt/autotools/bin/libtool --version| grep 2.4.4
+if [ $? -ne 0 ] ; then
+  tar xvzf libtool-2.4.4.tar.gz && cd libtool-2.4.4
+  ./configure --prefix=/opt/autotools && make && sudo make install
+  if [ $? -eq 0 ] ; then  echo "autotools build success"; else echo $? ; exit; fi
+fi
+
+/opt/gcc/bin/gcc --version | grep 4.8.4
+if [ $? -ne 0 ] ; then
+  echo "install gcc 4.8.4"
+  cd /usr/local/src
+  #gcc-4.8.4
+  if [ ! -f "gcc-4.8.4.tar.bz2" ]
+    then
+    wget http://ftpmirror.gnu.org/gcc/gcc-4.8.4/gcc-4.8.4.tar.bz2
+  fi
+
+  tar xvjf gcc-4.8.4.tar.bz2
+  cd gcc-4.8.4
+  mkdir obj
+  cd obj
+  ../configure --prefix=/opt/gcc --enable-bootstrap --disable-shared --enable-static --enable-threads=posix --enable-checking=release --with-system-zlib --enable-__cxa_atexit --disable-libunwind-exceptions --enable-gnu-unique-object --enable-languages=c,c++ --disable-dssi --with-ppl --with-cloog --with-tune=generic --build=x86_64-redhat-linux --with-gmp --with-mpfr --with-mpc  --with-arch_32=i686
+  make && sudo make install
+  if [ $? -eq 0 ] ; then  echo "gcc build success"; else echo $? ; exit; fi
+fi
+
+export PATH=/opt/autotools/bin:$PATH
+export PATH=/opt/gcc/bin:$PATH
+export LD_LIBRARY_PATH=/usr/lib:/usr/local/lib:/lib:/lib64
 ldconfig
-./configure -enable-threads=posix -disable-checking -disable-multilib -enable-languages=c,c++ -with-gmp -with-mpfr -with-mpc
-make && make install
+
+#boost 1.55
+cd /usr/local/src
+cat /usr/local/include/boost/version.hpp | grep BOOST_LIB_VERSION| grep 1_55
+if [ $? -ne 0 ] ; then
+  if [ ! -f "boost_1_55_0.tar.gz" ]
+    then
+    wget http://downloads.sourceforge.net/project/boost/boost/1.55.0/boost_1_55_0.tar.gz
+  fi
+
+  tar xvzf boost_1_55_0.tar.gz
+  cd boost_1_55_0
+  ./bootstrap.sh
+  ./b2 architecture=x86 address-model=64 link=static
+  ./bjam architecture=x86 address-model=64 link=static install
+  if [ $? -eq 0 ] ; then  echo "boostrap build sucess"; else echo "boostrap build error" ; exit; fi
+  ldconfig
+fi
+
+cd /usr/local/src
+strings /usr/local/lib/libdouble-conversion.a | grep 2.0.1
+if [ $? -ne 0 ] ; then
+  # double-conversion
+  if [ ! -f "double-conversion.zip" ]
+    then
+    #wget -O double-conversion.zip https://github.com/floitsch/double-conversion/archive/master.zip
+    wget -O double-conversion.zip https://codeload.github.com/google/double-conversion/zip/v2.0.1
+  fi
+
+  unzip double-conversion.zip
+  cd double-conversion-2.0.1
+  cmake . && make && sudo make install
+  if [ $? -eq 0 ] ; then  echo "0"; else echo "double-conversion build err" ; exit; fi
+  ldconfig
+fi
+
+#folly 0.57.0
+cd /usr/local/src
+if [ ! -f "folly-master.zip" ]
+  then
+  #git clone https://github.com/facebook/folly
+        #wget -O folly-0.57.0.zip https://codeload.github.com/facebook/folly/zip/v0.57.0
+        wget -O folly-master.zip https://codeload.github.com/facebook/folly/zip/master
+fi
+
+unzip folly-master.zip
+cd folly-master/folly
+sed '/Checks for library functions/ iAC_CHECK_LIB([pthread], [pthread_create])\n' configure.ac > configure.ac.new
+autoreconf -ivf
+./configure --disable-shared --enable-static && make && make install
+if [ $? -eq 0 ] ; then  echo "0"; else echo "folly build error" ; exit; fi
 ldconfig
 
 
-#CMAKE
-cd /data/source/mcrouter/src
-wget http://www.cmake.org/files/v2.8/cmake-2.8.12.2.tar.gz
-tar xvf cmake-2.8.12.2.tar.gz && cd cmake-2.8.12.2
+#mcrouter
+cd /usr/local/src
+if [ ! -f "mcrouter-master.zip" ]
+  then
+  #wget -O mcrouter-9.14.0.zip https://codeload.github.com/facebook/mcrouter/zip/v0.13.0
+  wget -O mcrouter-master.zip https://codeload.github.com/facebook/mcrouter/zip/master
+fi
+unzip mcrouter-master.zip
+cd mcrouter-master/mcrouter
+autoreconf -ivf
 ./configure && make && make install
-
-
-#AutoConf
-cd /data/source/mcrouter/src
-wget http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz
-tar xvf autoconf-2.69.tar.gz && cd autoconf-2.69
-./configure && make && make install
-
-
-#SCONS
-cd /data/source/mcrouter/src
-rpm -Uvh http://sourceforge.net/projects/scons/files/scons/2.3.3/scons-2.3.3-1.noarch.rpm
-#rpm -Uvh scons-2.3.3-1.noarch.rpm
-
-
-#Ragel
-cd /data/source/mcrouter/src
-wget http://www.colm.net/files/ragel/ragel-6.9.tar.gz
-tar -zxvf ragel-6.9.tar.gz
-cd ragel-6.9
-./configure && make && make install
-
-
-#Python27 for Boost
-yum -y install centos-release-SCL
-yum -y install python27
-scl enable python27 "easy_install pip"
-
-
-#Boost
-scl enable python27 bash
-python --version
-cd /data/source/mcrouter/src
-wget http://downloads.sourceforge.net/boost/boost_1_56_0.tar.bz2
-tar jxf boost_1_56_0.tar.bz2 && cd boost_1_56_0
-./bootstrap.sh --prefix=/usr && ./b2 stage threading=multi link=shared
-./b2 install threading=multi link=shared
-ldconfig
-
-
-#Gflags
-cd /data/source/mcrouter/src
-wget https://github.com/schuhschuh/gflags/archive/v2.1.1.tar.gz
-tar xzvf gflags-v2.1.1.tar.gz
-mkdir -p gflags-2.1.1/build/ && cd gflags-2.1.1/build/
-cmake .. -DBUILD_SHARED_LIBS:BOOL=ON -DGFLAGS_NAMESPACE:STRING=google && make && make install
-
-
-#GLOG
-cd /data/source/mcrouter/src
-wget https://google-glog.googlecode.com/files/glog-0.3.3.tar.gz
-tar xvf glog-0.3.3.tar.gz && cd glog-0.3.3
-./configure && make && make install
-
-
-ln -s /usr/local/lib/libgmp.so.10 /usr/lib/libgmp.so.10
-ln -s /usr/local/lib/libmpfr.so.4 /usr/lib/libmpfr.so.4
-ln -s /usr/local/lib/libmpc.so.3 /usr/lib/libmpc.so.3
-
-#double-conversion for Folly
-cd /data/source/mcrouter/src
-git clone https://code.google.com/p/double-conversion/
-cd double-conversion && scons install
-ln -sf src double-conversion
-ldconfig
-
-
-#Folly
-cd /data/source/mcrouter/src
-git clone https://github.com/genx7up/folly.git
-cd folly/folly/test
-wget https://googletest.googlecode.com/files/gtest-1.6.0.zip
-unzip gtest-1.6.0.zip
-cd ../
-autoreconf --install
-export CPPFLAGS="-I/data/source/mcrouter/src/double-conversion"
-./configure && make && make install
-
-
-#McRouter
-cd /data/source/mcrouter/src
-git clone https://github.com/facebook/mcrouter.git
-cd mcrouter/mcrouter
-export CPPFLAGS="-I/data/source/mcrouter/src/double-conversion"
-autoreconf --install
-./configure && make && make install
+if [ $? -eq 0 ] ; then  echo "0"; else echo "mcrouter build error" ; exit; fi
 mcrouter --help
