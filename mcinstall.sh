@@ -160,6 +160,7 @@ if [ ! -f "folly-master.zip" ]
   #git clone https://github.com/facebook/folly
         #wget -O folly-0.57.0.zip https://codeload.github.com/facebook/folly/zip/v0.57.0
         wget -O folly-master.zip https://codeload.github.com/facebook/folly/zip/master
+        wget -O folly-master.zip https://codeload.github.com/kingoliang/folly/zip/master
 fi
 
 unzip folly-master.zip
@@ -176,7 +177,7 @@ cd /usr/local/src
 if [ ! -f "mcrouter-master.zip" ]
   then
   #wget -O mcrouter-9.14.0.zip https://codeload.github.com/facebook/mcrouter/zip/v0.13.0
-  wget -O mcrouter-master.zip https://codeload.github.com/facebook/mcrouter/zip/master
+  wget -O mcrouter-master.zip https://codeload.github.com/kingoliang/mcrouter/zip/master
 fi
 unzip mcrouter-master.zip
 cd mcrouter-master/mcrouter
