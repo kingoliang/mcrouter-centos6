@@ -6,6 +6,7 @@ if [ ! -f "epel-release-latest-6.noarch.rpm" ]
   wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
 fi
 
+pwd=`dirname $0`
 rpm -Uvh epel-release-latest-6.noarch.rpm
 
 yum install -y bzip2-devel  libevent-devel libcap-devel scons rpm-build
@@ -28,7 +29,14 @@ if [ ! -f "/usr/local/lib/libglog.so" ] ; then
   #glog-0.3.3 rpmbuild
   if [ ! -f "glog-0.3.3.tar.gz" ]
     then
-    wget https://google-glog.googlecode.com/files/glog-0.3.3.tar.gz
+    if [ -f "$pwd/resources/glog-0.3.3.tar.gz" ]
+        then
+            echo "CP ................"
+            cp resources/glog-0.3.3.tar.gz /usr/local/src
+        else
+            echo "WGET ................"
+            wget https://google-glog.googlecode.com/files/glog-0.3.3.tar.gz
+    fi
   fi
 
   #rpmbuild -tb -D'NAME glog' -D'VERSION 0.3.3' glog-0.3.3.tar.gz
