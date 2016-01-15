@@ -23,21 +23,22 @@ yum install -y gflags-devel
 #libmpc-0.8-3.el6.x86_64
 #mpfr-2.4.1-6.el6.x86_64
 
-cd /usr/local/src
 
 if [ ! -f "/usr/local/lib/libglog.so" ] ; then
   #glog-0.3.3 rpmbuild
   if [ ! -f "glog-0.3.3.tar.gz" ]
     then
-    if [ -f "$pwd/resources/glog-0.3.3.tar.gz" ]
+    if [ -f "./resources/glog-0.3.3.tar.gz" ]
         then
             echo "CP ................"
-            cp resources/glog-0.3.3.tar.gz /usr/local/src
+            cp ./resources/glog-0.3.3.tar.gz /usr/local/src
         else
             echo "WGET ................"
-            wget https://google-glog.googlecode.com/files/glog-0.3.3.tar.gz
+            wget -O /usr/local/src/glog-0.3.3.tar.gz https://google-glog.googlecode.com/files/glog-0.3.3.tar.gz 
     fi
   fi
+
+cd /usr/local/src
 
   #rpmbuild -tb -D'NAME glog' -D'VERSION 0.3.3' glog-0.3.3.tar.gz
   tar zxvf glog-0.3.3.tar.gz
